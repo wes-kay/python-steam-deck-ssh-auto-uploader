@@ -2,6 +2,10 @@
 
 This Python application uploads games via SSH to a Steam Deck (or any other SSH-enabled device) using SSH key-based authentication. 
 
+Compress and Upload: It compresses each directory into a .tar.gz file, uploads it to the Steam Deck, and then decompresses it there.
+Remove After Transfer: After a directory is successfully transferred and decompressed on the Steam Deck, the local copy of the directory is deleted.
+
+
 This guide will walk you through enabling SSH on your Steam Deck, setting up SSH key-based authentication, and configuring the application.
 
 ## Prerequisites
