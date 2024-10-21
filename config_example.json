@@ -1,0 +1,8 @@
+{
+    "ssh_host": "steamdeck_ip",
+    "ssh_port": 22,
+    "ssh_user": "deck",
+    "ssh_key_path": "/path/to/your/private/key",
+    "destination_folder": "/path/on/steamdeck",
+    "watch_folder": "/path/to/watch/folder"
+}
