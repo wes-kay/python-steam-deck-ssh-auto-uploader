@@ -1,6 +1,8 @@
 # Folder Watcher and SSH Uploader
 
-This Python application monitors a specified folder for new files and uploads them via SSH to a Steam Deck (or any other SSH-enabled device) using SSH key-based authentication. This guide will walk you through enabling SSH on your Steam Deck, setting up SSH key-based authentication, and configuring the application.
+This Python application uploads games via SSH to a Steam Deck (or any other SSH-enabled device) using SSH key-based authentication. 
+
+This guide will walk you through enabling SSH on your Steam Deck, setting up SSH key-based authentication, and configuring the application.
 
 ## Prerequisites
 
@@ -87,7 +89,6 @@ It is recommended to run this application in a virtual environment to manage dep
 
     ```
     paramiko
-    watchdog
     ```
 
 ## 4. Configure the Application

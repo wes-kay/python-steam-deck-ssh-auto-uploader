@@ -1,9 +1,8 @@
 import os
-import time
+import shutil
 import paramiko
 import json
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import tarfile
 
 def load_config():
     with open("config.json", "r") as config_file:
@@ -27,36 +26,39 @@ class SSHUploader:
         )
         self.sftp_client = self.ssh_client.open_sftp()
 
-    def upload_file(self, local_file):
-        filename = os.path.basename(local_file)
-        remote_file = os.path.join(self.destination_folder, filename)
-        self.sftp_client.put(local_file, remote_file)
-        print(f"Uploaded {local_file} to {remote_file}")
+    def upload_compressed(self, local_path, remote_tar):
+        with tarfile.open(f"{local_path}.tar.gz", "w:gz") as tar:
+            tar.add(local_path, arcname=os.path.basename(local_path))
+        print(f"Compressed {local_path} to {local_path}.tar.gz")
+
+        self.sftp_client.put(f"{local_path}.tar.gz", remote_tar)
+        print(f"Uploaded compressed file: {local_path}.tar.gz to {remote_tar}")
+
+        self._decompress_remote_tar(remote_tar)
+
+        os.remove(f"{local_path}.tar.gz")
+
+    def _decompress_remote_tar(self, remote_tar):
+        command = f"tar -xzf {remote_tar} -C {self.destination_folder} && rm {remote_tar}"
+        stdin, stdout, stderr = self.ssh_client.exec_command(command)
+        stdout.channel.recv_exit_status()  
+        print(f"Decompressed {remote_tar} on the remote server")
 
     def close(self):
         self.sftp_client.close()
         self.ssh_client.close()
 
-class FolderMonitorHandler(FileSystemEventHandler):
-    def __init__(self, uploader):
-        self.uploader = uploader
-
-    def on_created(self, event):
-        if not event.is_directory:
-            self.uploader.upload_file(event.src_path)
-
-def start_monitoring(local_folder, ssh_uploader):
-    event_handler = FolderMonitorHandler(ssh_uploader)
-    observer = Observer()
-    observer.schedule(event_handler, local_folder, recursive=False)
-    observer.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+def move_and_upload_folders(local_folder, uploader):
+    directories = [d for d in os.listdir(local_folder) if os.path.isdir(os.path.join(local_folder, d))]
+    
+    for directory in directories:
+        local_path = os.path.join(local_folder, directory)
+        remote_tar = os.path.join(uploader.destination_folder, f"{directory}.tar.gz")
+        
+        uploader.upload_compressed(local_path, remote_tar)
+        
+        shutil.rmtree(local_path)
+        print(f"Removed local directory: {local_path}")
 
 if __name__ == "__main__":
     config = load_config()
@@ -74,6 +76,6 @@ if __name__ == "__main__":
         destination_folder=config["destination_folder"]
     )
 
-    start_monitoring(local_folder, uploader)
+    move_and_upload_folders(local_folder, uploader)
 
     uploader.close()
